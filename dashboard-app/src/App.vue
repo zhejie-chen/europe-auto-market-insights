@@ -5,11 +5,16 @@
       
       <div class="flex items-center gap-3">
         <div class="w-2 h-7 bg-blue-600 rounded-full"></div>
-        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">欧洲汽车市场洞察</h1>
+        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">{{ selectedMarket === 'ALL' ? '欧洲' : selectedMarket }}汽车市场洞察</h1>
       </div>
       
       <div class="flex flex-wrap items-center justify-center gap-3">
         
+        <button v-if="selectedMarket !== 'ALL'" @click="selectedMarket = 'ALL'" class="px-4 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-100 transition-colors flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          返回欧洲大盘
+        </button>
+
         <div class="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
           <div class="w-28">
             <CustomSelect v-model="tempYear" :options="yearOptions" suffix=" 年" />
@@ -36,22 +41,32 @@
       </div>
     </header>
 
-    <main v-if="isInitialized" id="report-content" class="max-w-[1600px] mx-auto grid grid-cols-1 xl:grid-cols-4 gap-6">
+    <main v-if="isInitialized" id="report-content" class="max-w-[1600px] mx-auto">
       
-      <div class="xl:col-span-3 flex flex-col gap-6">
-        <SalesTrendChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" />
-        <MarketShareChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" />
-        <CountryRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <GroupRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
-          <BrandRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
+      <div v-if="selectedMarket === 'ALL'" class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div class="flex flex-col gap-6" :class="hasReports ? 'xl:col-span-3' : 'xl:col-span-4'">
+          <SalesTrendChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" />
+          <MarketShareChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" />
+          <CountryRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GroupRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
+            <BrandRankingChart :selectedYear="selectedYear" :selectedMonth="selectedMonth" @openModal="handleOpenModal" />
+          </div>
+        </div>
+        
+        <div v-show="hasReports" class="xl:col-span-1 h-full">
+          <div class="sticky top-[104px] h-[calc(100vh-128px)] animate-fade-in-right">
+            <CountryReportsListCard :selectedYear="selectedYear" :selectedMonth="selectedMonth" @select-country="switchToCountry" @update-status="handleReportStatus" />
+          </div>
         </div>
       </div>
-      
-      <div class="xl:col-span-1 h-full">
-        <div class="sticky top-[104px] h-[calc(100vh-128px)]">
-          <InsightReportCard :commentary="expertCommentary" />
-        </div>
+
+      <div v-else>
+        <CountryInsights 
+          :year="selectedYear" 
+          :month="selectedMonth" 
+          :market="selectedMarket" 
+        />
       </div>
 
     </main>
@@ -80,7 +95,7 @@ import MarketShareChart from './components/charts/MarketShareChart.vue'
 import CountryRankingChart from './components/charts/CountryRankingChart.vue'
 import GroupRankingChart from './components/charts/GroupRankingChart.vue'
 import BrandRankingChart from './components/charts/BrandRankingChart.vue'
-import InsightReportCard from './components/cards/InsightReportCard.vue'
+import CountryReportsListCard from './components/cards/CountryReportsListCard.vue'
 
 import BaseModal from './components/modals/BaseModal.vue'
 import CountryDetailView from './components/modals/CountryDetailView.vue'
@@ -88,21 +103,34 @@ import ManufacturerDetailView from './components/modals/ManufacturerDetailView.v
 import DataDownloadModal from './components/modals/DataDownloadModal.vue'
 import CustomSelect from './components/ui/CustomSelect.vue'
 
+// 🌟 新增：引入国家洞察组件
+import CountryInsights from './components/insights/CountryInsights.vue'
+
 const isInitialized = ref(false)
 const isDownloadModalOpen = ref(false)
+
+const hasReports = ref(true)
 
 const yearOptions = [2023, 2024, 2025, 2026].map(y => ({ label: y, value: y }))
 const monthOptions = Array.from({length: 12}, (_, i) => ({ label: i + 1, value: i + 1 }))
 
-const tempYear = ref(2024)
+const tempYear = ref(2026) // 默认值设为 2026
 const tempMonth = ref(1)
 
 const selectedYear = ref(null)
 const selectedMonth = ref(null)
-const expertCommentary = ref('')
+const selectedMarket = ref('ALL') // 🌟 新增：当前确认的市场
 
 const modalState = ref({ isOpen: false, type: '', name: '', marketScope: '' })
 const handleOpenModal = (type, name, scope) => { modalState.value = { isOpen: true, type, name, marketScope: scope } }
+
+const handleReportStatus = (status) => {
+  hasReports.value = status
+}
+
+const switchToCountry = (country) => {
+  selectedMarket.value = country
+}
 
 const initDashboard = async () => {
   document.title = '欧洲汽车市场洞察'
@@ -120,7 +148,10 @@ const initDashboard = async () => {
     tempMonth.value = data.report_month
     selectedYear.value = data.report_year
     selectedMonth.value = data.report_month
-    expertCommentary.value = data.expert_commentary
+  } else {
+    // 兜底默认值
+    selectedYear.value = 2026
+    selectedMonth.value = 1
   }
   isInitialized.value = true
 }
@@ -128,15 +159,6 @@ const initDashboard = async () => {
 const applyDateQuery = async () => {
   selectedYear.value = tempYear.value
   selectedMonth.value = tempMonth.value
-  
-  const { data } = await supabase
-    .from('report_summary_insights')
-    .select('expert_commentary')
-    .eq('report_year', selectedYear.value)
-    .eq('report_month', selectedMonth.value)
-    .single()
-  
-  expertCommentary.value = data ? data.expert_commentary : ''
 }
 
 const downloadCurrentPDF = async () => {
@@ -162,4 +184,10 @@ onMounted(initDashboard)
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.animate-fade-in-right { animation: fadeInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 </style>

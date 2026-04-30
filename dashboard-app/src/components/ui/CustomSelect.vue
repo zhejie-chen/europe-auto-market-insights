@@ -24,7 +24,7 @@
             class="px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition-colors flex items-center justify-between"
             :class="{ 'bg-blue-50/50 text-blue-600 font-bold': option.value === modelValue }"
           >
-            {{ option.label }}{{ suffix }}
+            <span class="whitespace-nowrap">{{ option.label }}{{ suffix }}</span>
             <svg v-if="option.value === modelValue" class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
             </svg>

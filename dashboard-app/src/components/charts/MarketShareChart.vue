@@ -97,6 +97,7 @@ const chartOption = computed(() => {
   }
 
   return {
+    color: ['#10b981', '#06b6d4', '#3b82f6', '#94a3b8', '#475569', '#f59e0b'],
     tooltip: { 
       trigger: 'axis', axisPointer: { type: 'shadow' },
       formatter: (params) => {
@@ -116,9 +117,9 @@ const chartOption = computed(() => {
     grid: { left: '1%', right: '4%', bottom: '22%', top: '5%', containLabel: true },
     xAxis: { 
       type: 'category', data: xAxisData, axisLine: { lineStyle: { color: '#e2e8f0' } },
-      axisLabel: { formatter: (value) => value === currentLabel ? `{active|${value}}` : value, rich: { active: { color: '#d97706', fontWeight: 'bold', fontSize: 13 } } }
+      axisLabel: { color: '#64748b', formatter: (value) => value === currentLabel ? `{active|${value}}` : value, rich: { active: { color: '#d97706', fontWeight: 'bold', fontSize: 13 } } }
     },
-    yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' }, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
+    yAxis: { type: 'value', max: 100, axisLabel: { color: '#64748b', formatter: '{value}%' }, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
     dataZoom: [
       { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: false, moveOnMouseWheel: true, startValue: startZoom, endValue: endZoom },
       { type: 'slider', xAxisIndex: 0, height: 12, bottom: '10%', borderColor: '#e2e8f0', backgroundColor: '#f8fafc', handleSize: '150%', startValue: startZoom, endValue: endZoom }

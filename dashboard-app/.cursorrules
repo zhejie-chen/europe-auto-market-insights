@@ -1,0 +1,49 @@
+# AI Context & Development Rules (AI 辅助开发上下文与规则)
+
+> 本文档旨在为所有介入本项目的 AI 编程助手（如 Cursor, Windsurf, Copilot 等）提供核心上下文与业务规则。任何 AI 在生成代码、重构或修 Bug 前，**必须**完整阅读并遵守以下准则。
+
+## 1. 项目基本信息 (Project Overview)
+- **项目名称**：欧洲汽车市场洞察 (Europe Auto Market Insights Dashboard)
+- **技术栈**：Vue 3 (Composition API, `<script setup>`), Vite, Tailwind CSS v4, ECharts (`vue-echarts`), Supabase (BaaS 后端)。
+- **数据源形态**：大宽表/长表，主要通过 Supabase 获取，核心表如 `report_summary_insights` 和 `manufacturer_regional_registrations`。
+
+## 2. 核心业务逻辑 (Core Business Logic) - 🔴 极其重要
+
+### 2.1 修正数据回溯算法 (CY/LY Correction Logic)
+官方汽车销量数据具有“次年修正”的特性，历史查询图表**必须**遵循以下逻辑：
+1. **外延查询**：查询某年（如 2024）数据时，必须强制向后拉取一年（包含 2025 的数据）。
+2. **替换机制**：如果存在“次年同月”的数据，**强制使用次年的 `ly` (Last Year) 字段**（如 `monthly_units_ly` 和 `monthly_share_ly`）作为当年最终结果；若不存在或尚未发布，才使用“当年当月”的 `cy` 字段。
+3. **YTD (年度累计) 计算**：必须基于修正后的数据序列进行动态累加，严格截断至 `selectedMonth`，保证同比 (YoY) 逻辑的公平性。
+
+### 2.2 品牌与集团解耦 (Group vs. Brand Standalone Logic)
+- **集团数据**判定标准：`parent_group === brand`。
+- **品牌数据**判定标准：需通过 Set 动态判断。特别注意：若某集团下有且仅有自己一个品牌（例如 Tesla, Mazda，即集团 Set 长度为 1），它也必须被强行单列并归入“品牌排行榜”中。
+
+### 2.3 数据加载限制突破
+- 使用 Supabase 获取全量导出数据时，必须使用 `while(true)` 配合 `.range(from, from + 999)` 的轮询机制，以突破单次 1000 行的数据拉取限制。
+
+## 3. 视觉与交互规范 (UI/UX Guidelines)
+
+- **主色调统一**：全局统一使用科技蓝 (`blue-600` / `#3b82f6`)。**严禁**混用高饱和度的粉色、紫色，保持数据大屏的专业和克制。
+- **组件解耦与结构**：
+  - 图表卡片与详情弹窗必须彻底分离。
+  - 弹窗外壳 (`BaseModal.vue`) 与业务视图 (`xxxDetailView.vue`) 必须解耦，通过 `<slot>` 传递内容。
+- **定制化交互**：
+  - 抛弃原生 `<select>`，统一使用现有的 `<CustomSelect>` 组件。
+  - 右侧滚动侧边栏需通过 `top-[104px]` 配合 `position: sticky` 实现吸顶效果。
+
+## 4. 图表开发规范 (ECharts Rules)
+
+- **禁忌规则**：
+  - **绝不**使用饼图 (Pie Chart)。
+  - **绝不**将国家、集团、品牌三个层级的数据混在同一张图内。
+  - **绝不**伪造数据。
+- **渲染优化细节**：
+  - **条形图动态标签 (Inside Placement)**：当条形数据占比超过最大值的 30%~35% 时，标签应变为白色 (`#ffffff`) 嵌入柱子内部 (`insideRight`)；太短则放置在外部并使用灰色。
+  - **背景高亮光斑 (Highlight)**：若涉及 DataZoom 左右滑动，**严禁**使用 `markArea`（会导致裁切）。必须使用 `type: 'custom'` 渲染一个 `z: -1` 的底层矩形来实现当月高亮。
+- **基础体验要求**：所有图表组件必须提供清晰的 Tooltip，妥善处理空状态 (Empty State)、加载状态 (Loading) 以及异常值。
+
+## 5. 数据处理约束
+- 数据集中的 `metric_value` 默认按字符串读取，遇到数值型指标时，前端需负责转为 `Number` 计算。
+- 当遇到名称类指标（如 `Top1_品牌`, `Top_Model_1_车型` 等）时，**切勿尝试转为数字**。
+- 图表应服务于报告的主线叙事，不要为了丰富而做无意义的堆砌。优先复用现有的图表组件。

@@ -86,8 +86,8 @@ const chartOption = computed(() => {
     },
     legend: { data: displayYears.value.map(y => `${y}年`), bottom: 0 },
     grid: { left: '2%', right: '2%', bottom: '10%', top: '5%', containLabel: true },
-    xAxis: { type: 'category', data: months.map(m => `${m}月`), axisLine: { lineStyle: { color: '#e2e8f0' } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
+    xAxis: { type: 'category', data: months.map(m => `${m}月`), axisLine: { lineStyle: { color: '#e2e8f0' } }, axisLabel: { color: '#64748b' } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
     series: series
   }
 })
