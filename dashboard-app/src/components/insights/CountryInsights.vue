@@ -42,18 +42,27 @@
       <div v-if="anomalyItem" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col mt-4">
         <div class="flex items-center p-5 border-b border-slate-100 bg-slate-50/50">
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <span class="w-1.5 h-6 bg-red-500 rounded-full inline-block"></span>
+            <span class="w-1.5 h-6 bg-rose-400 rounded-full inline-block"></span>
             异常预警与观测
           </h2>
         </div>
-        <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-           <div class="lg:col-span-7 rounded-xl bg-slate-50 border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-400 min-h-[300px] gap-3">
-             <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-             【异常观测】专属图表稍后开发
+        <div class="p-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+           <div class="lg:col-span-7 rounded-xl bg-white border border-slate-100 shadow-sm flex flex-col min-h-[350px]">
+             <AnomalyObservationChart 
+               :year="year" 
+               :month="month" 
+               :country="market" 
+               :insightText="anomalyItem.insight_markdown" 
+               @models-loaded="handleModelsLoaded"
+               :hoveredModel="currentHoveredModel"
+             />
            </div>
-           <div class="lg:col-span-5 flex flex-col h-full lg:border-l border-slate-100 lg:pl-8">
+           <div class="lg:col-span-5 flex flex-col h-full lg:border-l border-slate-100 lg:pl-5 mt-4 lg:mt-0">
              <div class="font-extrabold text-slate-800 text-xs mb-4 uppercase tracking-widest text-opacity-50">观测详情解读</div>
-             <div class="ai-markdown flex-1 overflow-y-auto max-h-[600px] custom-scrollbar pr-4 text-[15px]" v-html="parseMarkdown(anomalyItem.insight_markdown)"></div>
+             <div class="ai-markdown flex-1 overflow-y-auto max-h-[600px] custom-scrollbar pr-4 text-[15px]" 
+                  v-html="enhancedMarkdown" 
+                  @mouseover="handleMouseOver" 
+                  @mouseout="handleMouseOut"></div>
            </div>
         </div>
       </div>
@@ -66,12 +75,12 @@
             市场前瞻预测
           </h2>
         </div>
-        <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div class="p-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
            <div class="lg:col-span-7 rounded-xl bg-slate-50 border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-400 min-h-[300px] gap-3">
              <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
              【前瞻预测】专属图表稍后开发
            </div>
-           <div class="lg:col-span-5 flex flex-col h-full lg:border-l border-slate-100 lg:pl-8">
+           <div class="lg:col-span-5 flex flex-col h-full lg:border-l border-slate-100 lg:pl-5 mt-4 lg:mt-0">
              <div class="font-extrabold text-slate-800 text-xs mb-4 uppercase tracking-widest text-opacity-50">预测详情解读</div>
              <div class="ai-markdown flex-1 overflow-y-auto max-h-[600px] custom-scrollbar pr-4 text-[15px]" v-html="parseMarkdown(predictItem.insight_markdown)"></div>
            </div>
@@ -92,6 +101,7 @@ import MacroLandscapeChart from './MacroLandscapeChart.vue'
 import MacroElectrificationChart from './MacroElectrificationChart.vue'
 import CompanyOverallChart from './CompanyOverallChart.vue'
 import CompanyDetailChart from './CompanyDetailChart.vue'
+import AnomalyObservationChart from './AnomalyObservationChart.vue'
 import InsightCarousel from './InsightCarousel.vue'
 
 const props = defineProps({
@@ -164,6 +174,48 @@ const anomalyItem = computed(() => {
 const predictItem = computed(() => {
   return insights.value.find(i => i.entity_id.startsWith('前瞻_'))
 })
+
+// === 高亮交互相关逻辑 ===
+const anomalyModels = ref([])
+const currentHoveredModel = ref(null)
+
+const handleModelsLoaded = (models) => {
+  anomalyModels.value = models
+}
+
+const enhancedMarkdown = computed(() => {
+  let text = anomalyItem.value?.insight_markdown || '';
+  if (!text) return '';
+  
+  if (anomalyModels.value.length > 0) {
+    // 按照长度降序排序，防止短名字覆盖长名字
+    const sortedModels = [...anomalyModels.value].sort((a,b) => b.matchStr.length - a.matchStr.length);
+    
+    sortedModels.forEach(obj => {
+      // 避免在 HTML 标签内部替换
+      // 使用 gi 进行不区分大小写的匹配，$& 保持原文本大小写，data-model 绑定图表所需的完整车型名
+      const regex = new RegExp(`(?![^<]*>)(${obj.matchStr})`, 'gi');
+      text = text.replace(regex, `<span class="model-hover-trigger font-bold text-slate-800 border-b border-dashed border-slate-400 cursor-pointer hover:bg-slate-100 transition-all duration-200 px-1 rounded-sm mx-0.5" data-model="${obj.fullModel}">$&</span>`);
+    })
+  }
+  
+  return marked.parse(text);
+})
+
+const handleMouseOver = (e) => {
+  const target = e.target;
+  if (target && target.classList.contains('model-hover-trigger')) {
+    currentHoveredModel.value = target.getAttribute('data-model');
+  }
+}
+
+const handleMouseOut = (e) => {
+  const target = e.target;
+  if (target && target.classList.contains('model-hover-trigger')) {
+    currentHoveredModel.value = null;
+  }
+}
+// ==========================
 
 const fetchData = async () => {
   if (!props.year || !props.month || !props.market || props.market === 'ALL') return
