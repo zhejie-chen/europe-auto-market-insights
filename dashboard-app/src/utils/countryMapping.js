@@ -1,0 +1,47 @@
+export const countryMap = {
+  'Germany': '德国',
+  'France': '法国',
+  'Italy': '意大利',
+  'Spain': '西班牙',
+  'United Kingdom': '英国',
+  'Poland': '波兰',
+  'Romania': '罗马尼亚',
+  'Netherlands': '荷兰',
+  'Belgium': '比利时',
+  'Czech Republic': '捷克',
+  'Czechia': '捷克',
+  'Greece': '希腊',
+  'Portugal': '葡萄牙',
+  'Sweden': '瑞典',
+  'Hungary': '匈牙利',
+  'Austria': '奥地利',
+  'Bulgaria': '保加利亚',
+  'Denmark': '丹麦',
+  'Finland': '芬兰',
+  'Slovakia': '斯洛伐克',
+  'Ireland': '爱尔兰',
+  'Croatia': '克罗地亚',
+  'Lithuania': '立陶宛',
+  'Slovenia': '斯洛文尼亚',
+  'Latvia': '拉脱维亚',
+  'Estonia': '爱沙尼亚',
+  'Cyprus': '塞浦路斯',
+  'Luxembourg': '卢森堡',
+  'Malta': '马耳他',
+  'Norway': '挪威',
+  'Switzerland': '瑞士',
+  'Iceland': '冰岛',
+  'Liechtenstein': '列支敦士登',
+  'Turkey': '土耳其',
+  'Serbia': '塞尔维亚',
+  'North Macedonia': '北马其顿',
+  'Bosnia and Herzegovina': '波黑',
+  'Albania': '阿尔巴尼亚',
+  'Montenegro': '黑山',
+  'Kosovo': '科索沃'
+}
+
+export const translateCountry = (enName) => {
+  if (!enName) return ''
+  return countryMap[enName] || enName
+}

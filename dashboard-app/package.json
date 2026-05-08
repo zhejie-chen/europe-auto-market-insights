@@ -11,9 +11,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "echarts": "^5.5.0",
+    "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
     "marked": "^17.0.5",
     "vue": "^3.4.0",
     "vue-echarts": "^6.6.0",
+    "vue-router": "^4.6.4",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
